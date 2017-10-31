@@ -1,8 +1,8 @@
+#include <type_traits>
+#include <tuple>
+
 #include <iostream>
 #include <string>
-#include <type_traits>
-#include <vector>
-#include <tuple>
 
 template <typename... Args>
 class any_of
@@ -15,7 +15,7 @@ public:
     explicit any_of(Ts&&... args) : args_(std::forward_as_tuple(std::forward<Ts>(args)...)) { }
 
     template <typename T>
-    bool impl(const T& value) const
+    bool apply(const T& value) const
     {
         return std::apply([&value](auto&&... args) { return ((args == value) || ...); }, args_);
     };
@@ -27,7 +27,13 @@ private:
 template <typename T, typename... Args>
 bool operator==(const T& lhs, const any_of<Args...>& rhs)
 {
-    return rhs.impl(lhs);
+    return rhs.apply(lhs);
+}
+
+template <typename T, typename... Args>
+bool operator!=(const T& lhs, const any_of<Args...>& rhs)
+{
+    return !(lhs == rhs);
 }
 
 void example_string()
@@ -38,7 +44,7 @@ void example_string()
     
     const std::string needle = "banan";
     
-    if (needle == any_of(s1, std::string("citrom"), s2))
+    if (needle != any_of(s1, std::string("citrom"), s2, "dio"))
         std::cout << "yep" << std::endl;
     else
         std::cout << "nope" << std::endl;
@@ -58,7 +64,7 @@ struct Foo
     int i;
 };
 
-inline bool operator==(const Foo& lhs, const Foo& rhs)
+bool operator==(const Foo& lhs, const Foo& rhs)
 {
     return lhs.i == rhs.i;
 }
